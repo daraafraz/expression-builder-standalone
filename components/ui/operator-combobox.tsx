@@ -23,6 +23,7 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
   const [searchTerm, setSearchTerm] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const filteredOptions = options.filter(option =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,6 +42,24 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
   useEffect(() => {
     setHighlightedIndex(-1)
   }, [searchTerm])
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (isOpen) {
+          setIsOpen(false)
+          setSearchTerm('')
+          onOpenChange?.(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen, onOpenChange])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
@@ -94,12 +113,12 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
   }
 
   return (
-    <div className={`relative ${className}`} style={style}>
+    <div ref={containerRef} className={`relative ${className}`} style={style}>
       <div
         className="relative cursor-pointer"
         onClick={toggleOpen}
       >
-        <div className={`flex items-center justify-between px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent ${isOpen ? 'min-w-[160px]' : ''}`}>
+        <div className={`flex items-center justify-between px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-transparent text-zinc-900 dark:text-zinc-100 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent ${isOpen ? 'min-w-[160px]' : ''}`}>
           {isOpen ? (
             <input
               ref={inputRef}
@@ -109,10 +128,16 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
               onKeyDown={handleKeyDown}
               placeholder="Search..."
               className="flex-1 bg-transparent outline-none"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span className="flex-1 font-mono">
+            <span 
+              className="flex-1 font-mono"
+              style={{ 
+                color: selectedOption ? '#ff7e5f' : undefined
+              }}
+            >
               {selectedOption ? selectedOption.display : placeholder}
             </span>
           )}
@@ -125,7 +150,7 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto w-[190px]">
+        <div className="absolute top-full left-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto w-[190px]">
           <ul className="py-1">
             {filteredOptions.length === 0 ? (
               <li className="px-3 py-2 text-zinc-500 text-sm">No operators found</li>
@@ -136,13 +161,15 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
                   onClick={() => handleOptionClick(option.value)}
                   className={`px-3 py-2 cursor-pointer flex items-center justify-between text-sm transition-colors ${
                     index === highlightedIndex
-                      ? 'bg-purple-100 dark:bg-purple-900/50'
+                      ? 'bg-blue-100 dark:bg-blue-900/50'
                       : 'hover:bg-zinc-100 dark:hover:bg-zinc-700'
                   } ${
                     option.value === value
-                      ? 'text-purple-600 dark:text-purple-400 font-medium'
+                      ? 'font-medium'
                       : 'text-zinc-900 dark:text-zinc-100'
-                  }`}
+                  }`} style={{
+                    color: option.value === value ? '#ff7e5f' : undefined
+                  }}
                 >
                   <span>{option.label}</span>
                   {option.value === value && (

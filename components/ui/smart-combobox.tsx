@@ -11,6 +11,7 @@ type SmartComboBoxProps = {
   options: ComboBoxOption[]
   value: string
   onChange: (value: string) => void
+  onOpenChange?: (isOpen: boolean) => void
   placeholder?: string
   className?: string
   style?: React.CSSProperties
@@ -23,6 +24,7 @@ export function SmartComboBox({
   options, 
   value, 
   onChange, 
+  onOpenChange,
   placeholder = "Type or select...", 
   className = "", 
   style, 
@@ -38,10 +40,17 @@ export function SmartComboBox({
   const inputRef = useRef<HTMLInputElement>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
-  const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(inputValue.toLowerCase()) ||
-    option.value.toLowerCase().includes(inputValue.toLowerCase())
-  )
+  const filteredOptions = options.filter(option => {
+    // If inputValue exactly matches a selected option, show all options
+    const exactMatch = options.some(opt => opt.value === inputValue)
+    if (exactMatch && inputValue.length > 0) {
+      return true
+    }
+    
+    // Otherwise, filter based on input
+    return option.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+           option.value.toLowerCase().includes(inputValue.toLowerCase())
+  })
 
   const visibleOptions = enableLazyLoading 
     ? filteredOptions.slice(0, visibleCount)
@@ -126,6 +135,7 @@ export function SmartComboBox({
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         setIsOpen(true)
+        onOpenChange?.(true)
       }
       return
     }
@@ -133,6 +143,7 @@ export function SmartComboBox({
     switch (e.key) {
       case 'Escape':
         setIsOpen(false)
+        onOpenChange?.(false)
         break
       case 'ArrowDown':
         e.preventDefault()
@@ -159,9 +170,11 @@ export function SmartComboBox({
           setInputValue(selectedValue)
           onChange(selectedValue)
           setIsOpen(false)
+          onOpenChange?.(false)
         } else {
           // Accept current input value and close
           setIsOpen(false)
+          onOpenChange?.(false)
           if (inputRef.current) {
             inputRef.current.blur()
           }
@@ -174,25 +187,36 @@ export function SmartComboBox({
     setInputValue(optionValue)
     onChange(optionValue)
     setIsOpen(false)
+    onOpenChange?.(false)
   }
 
   const IconComponent = valueAnalysis.icon
 
   return (
     <div className={`relative ${className}`} style={style}>
-      <div className="relative">
-        <div className="flex items-center">
+      <div className="relative border border-zinc-300 dark:border-zinc-600 rounded-lg bg-transparent focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all duration-200">
+        <div className="flex items-center px-3 py-2">
           <input
             ref={inputRef}
             type="text"
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              setIsOpen(true)
+              onOpenChange?.(true)
+            }}
             placeholder={placeholder}
-            className="w-full px-3 py-2 pr-20 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="flex-1 bg-transparent outline-none min-w-0 focus:outline-none focus:ring-0 focus:border-transparent focus:shadow-none border-0 invisible-input"
+            style={{ 
+              boxShadow: 'none', 
+              border: 'none', 
+              outline: 'none',
+              color: valueAnalysis.type === 'tag' ? '#5ebbef' : valueAnalysis.type === 'number' ? '#9ac42f' : '#374151',
+              fontFamily: value && (valueAnalysis.type === 'tag' || valueAnalysis.type === 'number') ? 'var(--font-geist-mono)' : 'var(--font-geist-sans)'
+            }}
           />
-          <div className="absolute right-2 flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {value && showClear && (
               <button
                 onClick={(e) => {
@@ -200,20 +224,23 @@ export function SmartComboBox({
                   setInputValue('')
                   onChange('')
                 }}
-                className="p-0.5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors"
+                className="p-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors"
                 title="Clear value"
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </button>
             )}
             {value && (
-              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+              <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono ${
                 valueAnalysis.type === 'tag' 
-                  ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                  ? ''
                   : valueAnalysis.type === 'number'
-                  ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                  ? ''
                   : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
-              }`}>
+              }`} style={{
+                backgroundColor: valueAnalysis.type === 'tag' ? 'lab(81 -12.81 -22.77)' : valueAnalysis.type === 'number' ? '#e4f0c9' : undefined,
+                color: valueAnalysis.type === 'tag' ? 'black' : valueAnalysis.type === 'number' ? 'black' : undefined
+              }}>
                 <IconComponent className="h-3 w-3" />
                 <span>{valueAnalysis.type}</span>
               </div>
@@ -222,14 +249,18 @@ export function SmartComboBox({
               className={`h-4 w-4 text-zinc-500 transition-transform duration-200 cursor-pointer ${
                 isOpen ? 'rotate-180' : ''
               }`}
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={() => {
+                const newIsOpen = !isOpen
+                setIsOpen(newIsOpen)
+                onOpenChange?.(newIsOpen)
+              }}
             />
           </div>
         </div>
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto">
           <ul className="py-1">
             {filteredOptions.length === 0 ? (
               <li className="px-3 py-2 text-zinc-500 text-sm">
@@ -243,16 +274,17 @@ export function SmartComboBox({
                   onClick={() => handleOptionClick(option.value)}
                   className={`px-3 py-2 cursor-pointer flex items-center justify-between text-sm transition-colors ${
                     index === highlightedIndex
-                      ? 'bg-purple-100 dark:bg-purple-900/50'
+                      ? 'bg-blue-100 dark:bg-blue-900/50'
                       : 'hover:bg-zinc-100 dark:hover:bg-zinc-700'
                   } ${
                     option.value === value
-                      ? 'text-purple-600 dark:text-purple-400 font-medium'
+                      ? 'font-medium'
                       : 'text-zinc-900 dark:text-zinc-100'
-                  }`}
+                  }`} style={{
+                    color: option.value === value ? '#5ebbef' : undefined
+                  }}
                 >
                   <div className="flex items-center gap-2">
-                    <Tag className="h-3 w-3 text-purple-500" />
                     <span>{option.label}</span>
                   </div>
                   {option.value === value && (
@@ -263,7 +295,7 @@ export function SmartComboBox({
             )}
             {isLoading && (
               <li className="px-3 py-2 text-zinc-500 text-sm flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-300 border-t-purple-600"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-blue-600"></div>
                 <span>Loading more...</span>
               </li>
             )}

@@ -11,6 +11,7 @@ type ComboBoxProps = {
   options: ComboBoxOption[]
   value: string
   onChange: (value: string) => void
+  onOpenChange?: (isOpen: boolean) => void
   placeholder?: string
   className?: string
   style?: React.CSSProperties
@@ -23,6 +24,7 @@ export function ComboBox({
   options, 
   value, 
   onChange, 
+  onOpenChange,
   placeholder = "Search...", 
   className = "", 
   style, 
@@ -115,6 +117,7 @@ export function ComboBox({
       case 'Escape':
         setIsOpen(false)
         setSearchTerm('')
+        onOpenChange?.(false)
         break
       case 'ArrowDown':
         e.preventDefault()
@@ -139,6 +142,7 @@ export function ComboBox({
           onChange(visibleOptions[highlightedIndex].value)
           setIsOpen(false)
           setSearchTerm('')
+          onOpenChange?.(false)
         }
         break
     }
@@ -148,15 +152,20 @@ export function ComboBox({
     onChange(optionValue)
     setIsOpen(false)
     setSearchTerm('')
+    onOpenChange?.(false)
   }
 
   return (
     <div className={`relative ${className}`} style={style}>
       <div
         className="relative cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const newIsOpen = !isOpen
+          setIsOpen(newIsOpen)
+          onOpenChange?.(newIsOpen)
+        }}
       >
-        <div className="flex items-center justify-between px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent">
+        <div className="flex items-center px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-transparent text-zinc-900 dark:text-zinc-100 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
           {isOpen ? (
             <input
               ref={inputRef}
@@ -165,37 +174,46 @@ export function ComboBox({
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="flex-1 bg-transparent outline-none"
+              className="flex-1 bg-transparent outline-none min-w-0"
+              style={{ fontFamily: 'var(--font-geist-sans)' }}
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span className="flex-1">
+            <span 
+              className={`flex-1 min-w-0 truncate ${selectedOption ? 'font-mono' : ''}`}
+              style={{ 
+                color: selectedOption ? '#5ebbef' : undefined,
+                fontFamily: selectedOption ? 'var(--font-geist-mono)' : 'var(--font-geist-sans)'
+              }}
+            >
               {selectedOption ? selectedOption.label : placeholder}
             </span>
           )}
-          {value && showClear && !isOpen && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onChange('')
-                setSearchTerm('')
-              }}
-              className="p-0.5 mr-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors"
-              title="Clear value"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-          <ChevronDown 
-            className={`h-4 w-4 text-zinc-500 transition-transform duration-200 ${
-              isOpen ? 'rotate-180' : ''
-            }`}
-          />
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {value && showClear && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onChange('')
+                  setSearchTerm('')
+                }}
+                className="p-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors"
+                title="Clear value"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <ChevronDown 
+              className={`h-4 w-4 text-zinc-500 transition-transform duration-200 ${
+                isOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </div>
         </div>
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto">
           <ul ref={listRef} className="py-1">
             {filteredOptions.length === 0 ? (
               <li className="px-3 py-2 text-zinc-500 text-sm">No options found</li>
@@ -207,13 +225,15 @@ export function ComboBox({
                   onClick={() => handleOptionClick(option.value)}
                   className={`px-3 py-2 cursor-pointer flex items-center justify-between text-sm transition-colors ${
                     index === highlightedIndex
-                      ? 'bg-purple-100 dark:bg-purple-900/50'
+                      ? 'bg-blue-100 dark:bg-blue-900/50'
                       : 'hover:bg-zinc-100 dark:hover:bg-zinc-700'
                   } ${
                     option.value === value
-                      ? 'text-purple-600 dark:text-purple-400 font-medium'
+                      ? 'font-medium'
                       : 'text-zinc-900 dark:text-zinc-100'
-                  }`}
+                  }`} style={{
+                    color: option.value === value ? '#5ebbef' : undefined
+                  }}
                 >
                   <span>{option.label}</span>
                   {option.value === value && (
@@ -224,7 +244,7 @@ export function ComboBox({
             )}
             {isLoading && (
               <li className="px-3 py-2 text-zinc-500 text-sm flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-300 border-t-purple-600"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-blue-600"></div>
                 <span>Loading more...</span>
               </li>
             )}
@@ -244,6 +264,7 @@ export function ComboBox({
           onClick={() => {
             setIsOpen(false)
             setSearchTerm('')
+            onOpenChange?.(false)
           }}
         />
       )}

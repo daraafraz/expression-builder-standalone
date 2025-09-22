@@ -1,9 +1,10 @@
 'use client'
 import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Settings } from 'lucide-react'
 import { ComboBox } from '@/components/ui/combobox'
 import { SmartComboBox } from '@/components/ui/smart-combobox'
 import { OperatorComboBox } from '@/components/ui/operator-combobox'
+import { Modal } from '@/components/ui/modal'
 
 type CalculationType = {
   leftTag: string
@@ -49,25 +50,27 @@ const VALUE_TYPES = [
 ]
 
 export default function ExpressionBuilder() {
-  // Generate 50 example tags for testing lazy loading
-  const generateExampleTags = () => {
-    const tags = []
-    for (let i = 1; i <= 50; i++) {
-      tags.push(`ExampleTag${i}`)
-    }
-    return tags.join(', ')
+  // Default industrial tags for oil & gas operations
+  const generateDefaultTags = () => {
+    return "WELL_B1_PRESSURE, WELL_B1_TEMP, WELL_B1_FLOW_OIL, WELL_B1_FLOW_GAS, WELL_B1_CHOKE_POS, WELL_B2_PRESSURE, WELL_B2_TEMP, WELL_B2_FLOW_OIL, WELL_B2_FLOW_WATER, WELL_B2_STATUS, SEP_03_TEMP_IN, SEP_03_TEMP_OUT, SEP_03_PRESS_IN, SEP_03_PRESS_OUT, SEP_03_LEVEL, SEP_04_TEMP_IN, SEP_04_PRESS_OUT, SEP_04_LEVEL, SEP_05_TEMP_IN, SEP_05_PRESS_OUT, COMP_C1_SPEED, COMP_C1_TEMP_DISCH, COMP_C1_VIB_X, COMP_C1_VIB_Y, COMP_C1_VIB_Z, COMP_C2_PRESS_SUCTION, COMP_C2_PRESS_DISCH, COMP_C2_TEMP_BRG, COMP_C2_STATUS, COMP_C2_LOAD, PUMP_D1_SPEED, PUMP_D1_PRESS_DISCH, PUMP_D1_FLOWRATE, PUMP_D1_STATUS, PUMP_D1_TEMP_BRG, PUMP_D2_SPEED, PUMP_D2_PRESS_DISCH, PUMP_D2_VIBRATION, PUMP_D2_POWER_KW, PUMP_D2_STATUS, TANK_10_LEVEL, TANK_10_PRESSURE, TANK_10_TEMP, TANK_11_LEVEL, TANK_11_TEMP, PIPELINE_SEC_PRESS_IN, PIPELINE_SEC_PRESS_OUT, PIPELINE_SEC_FLOWRATE, PIPELINE_SEC_TEMP_IN, PIPELINE_SEC_TEMP_OUT"
   }
   
-  const [customTags, setCustomTags] = useState(generateExampleTags())
+  const [customTags, setCustomTags] = useState(generateDefaultTags())
+  const [leftTagOpen, setLeftTagOpen] = useState(false)
   const [operatorOpen, setOperatorOpen] = useState(false)
+  const [calcLeftTagOpen, setCalcLeftTagOpen] = useState(false)
   const [calcOperatorOpen, setCalcOperatorOpen] = useState(false)
+  const [rightValueOpen, setRightValueOpen] = useState(false)
+  const [calcRightValueOpen, setCalcRightValueOpen] = useState(false)
   const [valueMode, setValueMode] = useState<'value' | 'calculation'>('value')
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
+  const [tempCustomTags, setTempCustomTags] = useState('')
   const [expression, setExpression] = useState<ExpressionType>({
-    leftTag: 'ExampleTag1',
+    leftTag: '',
     operator: '=',
     rightValue: '',
     calculation: {
-      leftTag: 'ExampleTag1',
+      leftTag: '',
       operator: '+',
       rightValue: ''
     }
@@ -104,6 +107,26 @@ export default function ExpressionBuilder() {
         }
       }))
     }
+  }
+
+  // Modal action handlers
+  const handleOpenModal = () => {
+    setTempCustomTags(customTags)
+    setIsConfigModalOpen(true)
+  }
+
+  const handleSaveTags = () => {
+    handleTagsChange(tempCustomTags)
+    setIsConfigModalOpen(false)
+  }
+
+  const handleCancelTags = () => {
+    setTempCustomTags(customTags)
+    setIsConfigModalOpen(false)
+  }
+
+  const handleResetTags = () => {
+    setTempCustomTags(generateDefaultTags())
   }
 
   const analyzeRightValue = (value: string) => {
@@ -182,7 +205,7 @@ export default function ExpressionBuilder() {
         ? `the number ${calcRightAnalysis.value}`
         : `"${calcRightAnalysis.value}"`
 
-      return `Condition: When ${expression.leftTag} ${operatorText} the result of ${calc.leftTag} ${calcOperatorText} ${calcRightText}`
+      return `Condition: When ${expression.leftTag || '___'} ${operatorText} the result of ${calc.leftTag || '___'} ${calcOperatorText} ${calcRightText}`
     }
 
     const rightAnalysis = analyzeSimpleValue(expression.rightValue)
@@ -192,16 +215,85 @@ export default function ExpressionBuilder() {
       ? `the number ${rightAnalysis.value}`
       : `"${rightAnalysis.value}"`
 
-    return `Condition: When ${expression.leftTag} ${operatorText} ${rightText}`
+    return `Condition: When ${expression.leftTag || '___'} ${operatorText} ${rightText}`
+  }
+
+  const generateStyledNaturalLanguage = () => {
+    const operatorText = {
+      '=': 'equals',
+      '>': 'is greater than',
+      '<': 'is less than',
+      '!=': 'does not equal',
+      '>=': 'is greater than or equal to',
+      '<=': 'is less than or equal to'
+    }[expression.operator] || expression.operator
+
+    if (valueMode === 'calculation' && expression.calculation) {
+      const calc = expression.calculation
+      const calcOperatorText = {
+        '+': 'plus',
+        '-': 'minus',
+        '*': 'times',
+        '/': 'divided by'
+      }[calc.operator] || calc.operator
+
+      const calcRightAnalysis = analyzeSimpleValue(calc.rightValue)
+      
+      return (
+        <span>
+          <strong>Condition:</strong> When{' '}
+          <em>{expression.leftTag || '___'}</em>{' '}
+          {operatorText} the result of{' '}
+          <em>{calc.leftTag || '___'}</em>{' '}
+          {calcOperatorText}{' '}
+          {calcRightAnalysis.type === 'tag' ? (
+            <>
+              the value of <em>{calc.rightValue}</em>
+            </>
+          ) : calcRightAnalysis.type === 'constant' && typeof calcRightAnalysis.value === 'number' ? (
+            <>
+              the number <strong>{calcRightAnalysis.value}</strong>
+            </>
+          ) : (
+            <>
+              <em>"{calcRightAnalysis.value}"</em>
+            </>
+          )}
+        </span>
+      )
+    }
+
+    const rightAnalysis = analyzeSimpleValue(expression.rightValue)
+    
+    return (
+      <span>
+        <strong>Condition:</strong> When{' '}
+        <em>{expression.leftTag || '___'}</em>{' '}
+        {operatorText}{' '}
+        {rightAnalysis.type === 'tag' ? (
+          <>
+            the value of <em>{expression.rightValue}</em>
+          </>
+        ) : rightAnalysis.type === 'constant' && typeof rightAnalysis.value === 'number' ? (
+          <>
+            the number <strong>{rightAnalysis.value}</strong>
+          </>
+        ) : (
+          <>
+            <em>"{rightAnalysis.value}"</em>
+          </>
+        )}
+      </span>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950">
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-800">
+      <main className="container mx-auto px-4 py-8">
         <div className="space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-black dark:text-white">
             Expression Builder
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
@@ -209,37 +301,55 @@ export default function ExpressionBuilder() {
           </p>
         </div>
 
-        {/* Tag Configuration */}
-        <div className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-zinc-100">
-            Configure Available Tags
-          </h2>
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Enter comma-separated tags (e.g., "pressure, temperature, speed, altitude"):
-            </label>
-            <textarea
-              value={customTags}
-              onChange={(e) => handleTagsChange(e.target.value)}
-              placeholder="pressure, temperature, speed, altitude, status, mode"
-              className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-              rows={2}
-            />
-            <div className="text-xs text-zinc-500">
-              {availableTags.length > 0 ? (
-                <>Available tags: {availableTags.map(tag => tag.label).join(', ')}</>
-              ) : (
-                'Using default tags: Tag1, Tag2, Tag3, Tag4, Tag5, Tag6'
-              )}
-            </div>
-          </div>
-        </div>
 
         {/* Expression Builder */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-8 shadow-lg">
-          <h2 className="text-xl font-semibold mb-6 text-zinc-900 dark:text-zinc-100">
-            Build Expression
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-black dark:text-white">
+              Define Condition
+            </h2>
+            <button
+              onClick={handleOpenModal}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              Configure Tags
+            </button>
+          </div>
+
+          {/* Expression Preview */}
+          <div className="mb-6 p-3 bg-zinc-50 dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700">
+            <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">
+              Preview:
+            </h3>
+            <div>
+              <div className="text-sm font-mono font-medium">
+                <span className="font-medium font-mono" style={{ color: '#5ebbef' }}>{expression.leftTag || '___'}</span>
+                <span className="mx-1" style={{ color: '#ff7e5f' }}>{expression.operator}</span>
+                {valueMode === 'calculation' && expression.calculation ? (
+                  <span>
+                    <span className="font-medium" style={{ color: '#000000' }}>(</span>
+                    <span className="font-medium font-mono" style={{ color: '#5ebbef' }}>{expression.calculation.leftTag || '___'}</span>
+                    <span className="mx-1" style={{ color: '#ff7e5f' }}>{expression.calculation.operator}</span>
+                    <span className="font-medium font-mono" style={{ 
+                      color: (() => {
+                        const calcRightAnalysis = analyzeSimpleValue(expression.calculation.rightValue)
+                        return calcRightAnalysis.type === 'tag' ? '#5ebbef' : '#9ac42f'
+                      })()
+                    }}>{expression.calculation.rightValue || '___'}</span>
+                    <span className="font-medium" style={{ color: '#000000' }}>)</span>
+                  </span>
+                ) : (
+                  <span className="font-medium font-mono" style={{ 
+                    color: (() => {
+                      const rightAnalysis = analyzeSimpleValue(expression.rightValue)
+                      return rightAnalysis.type === 'tag' ? '#5ebbef' : '#9ac42f'
+                    })()
+                  }}>{expression.rightValue || '___'}</span>
+                )}
+              </div>
+            </div>
+          </div>
           
           <div className="flex items-end gap-4 flex-wrap">
             {/* Left Tag */}
@@ -247,13 +357,20 @@ export default function ExpressionBuilder() {
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Tag
               </label>
-              <ComboBox
+              <SmartComboBox
                 options={availableTags}
                 value={expression.leftTag}
-                onChange={(value) => setExpression(prev => ({ ...prev, leftTag: value }))}
-                placeholder="Search tags..."
+                onChange={(value) => {
+                  // Only allow tag selection - check if it's a valid tag
+                  const isValidTag = availableTags.some(tag => tag.value === value)
+                  if (isValidTag || value === '') {
+                    setExpression(prev => ({ ...prev, leftTag: value }))
+                  }
+                }}
+                onOpenChange={setLeftTagOpen}
+                placeholder="Select tag..."
                 className="w-auto min-w-[160px] transition-all duration-300 ease-out"
-                style={{ width: `${Math.max(160, (expression.leftTag.length * 8) + 60)}px` }}
+                style={{ width: leftTagOpen ? '200px' : `${Math.max(180, (expression.leftTag.length * 10) + 140)}px` }}
               />
             </div>
 
@@ -276,16 +393,13 @@ export default function ExpressionBuilder() {
             {/* Smart Value Field */}
             <div className="flex flex-col gap-2 min-w-0">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Value
-                </label>
                 <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
                   <button
                     onClick={() => {
                       setValueMode('value')
                       setExpression(prev => ({ ...prev, rightValue: '' }))
                     }}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                    className={`px-2 py-1 text-sm font-medium rounded transition-colors ${
                       valueMode === 'value'
                         ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
@@ -298,7 +412,7 @@ export default function ExpressionBuilder() {
                       setValueMode('calculation')
                       setExpression(prev => ({ ...prev, rightValue: '' }))
                     }}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                    className={`px-2 py-1 text-sm font-medium rounded transition-colors ${
                       valueMode === 'calculation'
                         ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
@@ -314,8 +428,10 @@ export default function ExpressionBuilder() {
                   options={availableTags}
                   value={expression.rightValue}
                   onChange={(value) => setExpression(prev => ({ ...prev, rightValue: value }))}
+                  onOpenChange={setRightValueOpen}
                   placeholder="Type value or select tag..."
-                  className="w-[280px]"
+                  className="w-auto min-w-[280px] transition-all duration-300 ease-out"
+                  style={{ width: rightValueOpen ? '320px' : `${Math.max(280, (expression.rightValue.length * 10) + 140)}px` }}
                 />
               ) : (
                 <div className="flex items-center gap-2">
@@ -325,16 +441,23 @@ export default function ExpressionBuilder() {
                   </span>
                   
                   {/* Calculation Tag */}
-                  <ComboBox
+                  <SmartComboBox
                     options={availableTags}
                     value={expression.calculation?.leftTag || ''}
-                    onChange={(value) => setExpression(prev => ({ 
-                      ...prev, 
-                      calculation: { ...prev.calculation!, leftTag: value }
-                    }))}
-                    placeholder="Search tags..."
+                    onChange={(value) => {
+                      // Only allow tag selection - check if it's a valid tag
+                      const isValidTag = availableTags.some(tag => tag.value === value)
+                      if (isValidTag || value === '') {
+                        setExpression(prev => ({ 
+                          ...prev, 
+                          calculation: { ...prev.calculation!, leftTag: value }
+                        }))
+                      }
+                    }}
+                    onOpenChange={setCalcLeftTagOpen}
+                    placeholder="Select tag..."
                     className="w-auto min-w-[160px] transition-all duration-300 ease-out"
-                    style={{ width: `${Math.max(160, ((expression.calculation?.leftTag || 'ExampleTag1').length * 8) + 60)}px` }}
+                    style={{ width: calcLeftTagOpen ? '200px' : `${Math.max(180, ((expression.calculation?.leftTag || '').length * 10) + 140)}px` }}
                   />
                   
                   {/* Calculation Operator */}
@@ -359,8 +482,10 @@ export default function ExpressionBuilder() {
                       ...prev, 
                       calculation: { ...prev.calculation!, rightValue: value }
                     }))}
+                    onOpenChange={setCalcRightValueOpen}
                     placeholder="Type value or select tag..."
-                    className="w-[280px]"
+                    className="w-auto min-w-[280px] transition-all duration-300 ease-out"
+                    style={{ width: calcRightValueOpen ? '320px' : `${Math.max(280, ((expression.calculation?.rightValue || '').length * 10) + 140)}px` }}
                   />
                   
                   {/* Closing Parenthesis */}
@@ -381,29 +506,106 @@ export default function ExpressionBuilder() {
             </div>
           </div>
 
-          {/* Expression Preview */}
-          <div className="mt-8 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
-            <h3 className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2">
-              Expression Preview:
-            </h3>
-            <div className="font-mono text-purple-800 dark:text-purple-200 mb-3">
-              {expression.leftTag} {expression.operator} {
-                valueMode === 'calculation' && expression.calculation
-                  ? `(${expression.calculation.leftTag} ${expression.calculation.operator} ${expression.calculation.rightValue || '___'})`
-                  : (expression.rightValue || '___')
-              }
-            </div>
-            <div className="text-xs text-purple-600 dark:text-purple-400 italic">
-              {(valueMode === 'value' && expression.rightValue) || 
-               (valueMode === 'calculation' && expression.calculation?.rightValue) 
-                ? generateNaturalLanguage() 
-                : 'Enter a value to see natural language...'}
-            </div>
+          {/* Natural Language Description */}
+          <div className="mt-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {(valueMode === 'value' && expression.rightValue) || 
+             (valueMode === 'calculation' && expression.calculation?.rightValue) 
+              ? generateStyledNaturalLanguage() 
+              : 'Enter a value to see natural language description...'}
           </div>
         </div>
 
+        {/* Configure Tags Modal */}
+        <Modal
+          isOpen={isConfigModalOpen}
+          onClose={handleCancelTags}
+          title="Configure Available Tags"
+        >
+          <div className="space-y-6">
+            {/* Input Form First */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Enter comma-separated tags:
+              </label>
+              <textarea
+                value={tempCustomTags}
+                onChange={(e) => setTempCustomTags(e.target.value)}
+                placeholder="pressure, temperature, speed, altitude, status, mode"
+                className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-500 focus:border-transparent resize-none"
+                rows={4}
+              />
+              <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                💡 Tags are case-sensitive and should be descriptive names for your data fields.
+              </div>
+            </div>
+
+            {/* Preview Box Below */}
+            <div>
+              <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                Preview Available Tags:
+              </div>
+              <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-600 min-h-[100px]">
+                <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  {tempCustomTags.trim() ? (
+                    (() => {
+                      const tempTags = tempCustomTags
+                        .split(',')
+                        .map(tag => tag.trim())
+                        .filter(tag => tag.length > 0)
+                        .map(tag => ({ value: tag, label: tag }))
+                      
+                      return tempTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {tempTags.map(tag => (
+                            <span 
+                              key={tag.value}
+                              className="inline-block px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-xs font-mono"
+                            >
+                              {tag.label}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-zinc-500 dark:text-zinc-400">No valid tags found</span>
+                      )
+                    })()
+                  ) : (
+                    <span className="text-zinc-500 dark:text-zinc-400">Using default tags: Tag1, Tag2, Tag3, Tag4, Tag5, Tag6</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-700">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleResetTags}
+                  className="px-3 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                >
+                  Reset to Default
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleCancelTags}
+                  className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveTags}
+                  className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 border border-zinc-300 dark:border-zinc-600 rounded-lg transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+
         {/* JSON Output */}
-        <div className="bg-zinc-50 dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-8">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-8 shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-zinc-900 dark:text-zinc-100">
             Generated JSON
           </h2>
@@ -412,20 +614,7 @@ export default function ExpressionBuilder() {
           </pre>
         </div>
 
-        {/* Future Features Preview */}
-        <div className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-700">
-          <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-2">
-            🚀 Coming Next (Phase 2)
-          </h3>
-          <ul className="text-sm text-purple-800 dark:text-purple-200 space-y-1">
-            <li>• Multiple expressions with AND/OR logic</li>
-            <li>• Nested parentheses grouping</li>
-            <li>• Complex calculations with arithmetic operators</li>
-            <li>• Visual connector lines and flow indicators</li>
-            <li>• Drag-and-drop interface</li>
-            <li>• Expression validation and error handling</li>
-          </ul>
-        </div>
+
         </div>
       </main>
     </div>
