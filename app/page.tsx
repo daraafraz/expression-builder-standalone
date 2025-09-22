@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Trash2, Settings } from 'lucide-react'
-import { ComboBox } from '@/components/ui/combobox'
+// import { ComboBox } from '@/components/ui/combobox' // Unused
 import { SmartComboBox } from '@/components/ui/smart-combobox'
 import { OperatorComboBox } from '@/components/ui/operator-combobox'
 import { Modal } from '@/components/ui/modal'
@@ -44,10 +44,10 @@ const CALC_OPERATORS = [
   { value: '/', label: '/ (division)', display: '/' }
 ]
 
-const VALUE_TYPES = [
-  { value: 'constant', label: 'Constant' },
-  { value: 'tag', label: 'Tag' }
-]
+// const VALUE_TYPES = [ // Unused
+//   { value: 'constant', label: 'Constant' },
+//   { value: 'tag', label: 'Tag' }
+// ]
 
 export default function ExpressionBuilder() {
   // Default industrial tags for oil & gas operations
@@ -179,44 +179,7 @@ export default function ExpressionBuilder() {
     }
   }
 
-  const generateNaturalLanguage = () => {
-    const operatorText = {
-      '=': 'equals',
-      '>': 'is greater than',
-      '<': 'is less than',
-      '!=': 'does not equal',
-      '>=': 'is greater than or equal to',
-      '<=': 'is less than or equal to'
-    }[expression.operator] || expression.operator
-
-    if (valueMode === 'calculation' && expression.calculation) {
-      const calc = expression.calculation
-      const calcOperatorText = {
-        '+': 'plus',
-        '-': 'minus',
-        '*': 'times',
-        '/': 'divided by'
-      }[calc.operator] || calc.operator
-
-      const calcRightAnalysis = analyzeSimpleValue(calc.rightValue)
-      const calcRightText = calcRightAnalysis.type === 'tag' 
-        ? `the value of ${calc.rightValue}`
-        : calcRightAnalysis.type === 'constant' && typeof calcRightAnalysis.value === 'number'
-        ? `the number ${calcRightAnalysis.value}`
-        : `"${calcRightAnalysis.value}"`
-
-      return `Condition: When ${expression.leftTag || '___'} ${operatorText} the result of ${calc.leftTag || '___'} ${calcOperatorText} ${calcRightText}`
-    }
-
-    const rightAnalysis = analyzeSimpleValue(expression.rightValue)
-    const rightText = rightAnalysis.type === 'tag' 
-      ? `the value of ${expression.rightValue}`
-      : rightAnalysis.type === 'constant' && typeof rightAnalysis.value === 'number'
-      ? `the number ${rightAnalysis.value}`
-      : `"${rightAnalysis.value}"`
-
-    return `Condition: When ${expression.leftTag || '___'} ${operatorText} ${rightText}`
-  }
+  // Removed unused generateNaturalLanguage function
 
   const generateStyledNaturalLanguage = () => {
     const operatorText = {
@@ -256,7 +219,7 @@ export default function ExpressionBuilder() {
             </>
           ) : (
             <>
-              <em>"{calcRightAnalysis.value}"</em>
+              <em>&quot;{calcRightAnalysis.value}&quot;</em>
             </>
           )}
         </span>
@@ -280,7 +243,7 @@ export default function ExpressionBuilder() {
           </>
         ) : (
           <>
-            <em>"{rightAnalysis.value}"</em>
+            <em>&quot;{rightAnalysis.value}&quot;</em>
           </>
         )}
       </span>
