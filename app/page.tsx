@@ -264,8 +264,8 @@ export default function ExpressionBuilder() {
     const jsonLogicOperator = operatorMap[expression.operator] || expression.operator
     
     // Handle calculation in right value
-    if (rightAnalysis.type === 'calculation' && rightAnalysis.value) {
-      const calc = rightAnalysis.value
+    if (rightAnalysis.type === 'calculation' && rightAnalysis.value && typeof rightAnalysis.value === 'object' && 'operator' in rightAnalysis.value) {
+      const calc = rightAnalysis.value as { left: { type: string; value: string }; operator: string; right: { type: string; value: string | number } }
       
       // Map mathematical operators to JSONLogic format
       const calcOperatorMap: { [key: string]: string } = {
