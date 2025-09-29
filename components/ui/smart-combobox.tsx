@@ -2,22 +2,37 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown, Check, Tag, Hash, Type, X } from 'lucide-react'
 
+/**
+ * SmartComboBox component with intelligent value analysis and lazy loading
+ * 
+ * Features:
+ * - Smart value type detection (tag, number, string)
+ * - Visual type indicators with icons
+ * - Search/filter options as you type
+ * - Lazy loading for large option lists
+ * - Keyboard navigation (arrow keys, enter, escape)
+ * - Click outside to close
+ * - Clear button for selected values
+ * - Customizable styling and behavior
+ */
+
+// Type definitions for component props and options
 type ComboBoxOption = {
-  value: string
-  label: string
+  value: string  // Unique identifier for the option
+  label: string  // Display text for the option
 }
 
 type SmartComboBoxProps = {
-  options: ComboBoxOption[]
-  value: string
-  onChange: (value: string) => void
-  onOpenChange?: (isOpen: boolean) => void
-  placeholder?: string
-  className?: string
-  style?: React.CSSProperties
-  showClear?: boolean
-  enableLazyLoading?: boolean
-  batchSize?: number
+  options: ComboBoxOption[]        // Array of available options
+  value: string                    // Currently selected value
+  onChange: (value: string) => void // Callback when selection changes
+  onOpenChange?: (isOpen: boolean) => void // Callback when dropdown opens/closes
+  placeholder?: string             // Placeholder text when no value selected
+  className?: string               // Additional CSS classes
+  style?: React.CSSProperties     // Inline styles
+  showClear?: boolean              // Whether to show clear button
+  enableLazyLoading?: boolean      // Enable lazy loading for large lists
+  batchSize?: number               // Number of items to load per batch
 }
 
 export function SmartComboBox({ 
@@ -32,16 +47,20 @@ export function SmartComboBox({
   enableLazyLoading = true,
   batchSize = 20
 }: SmartComboBoxProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [inputValue, setInputValue] = useState(value)
-  const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  const [visibleCount, setVisibleCount] = useState(batchSize)
-  const [isLoading, setIsLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const observerRef = useRef<IntersectionObserver | null>(null)
+  // Component state management
+  const [isOpen, setIsOpen] = useState(false)           // Dropdown open/closed state
+  const [inputValue, setInputValue] = useState(value)   // Current input value
+  const [highlightedIndex, setHighlightedIndex] = useState(-1) // Currently highlighted option index
+  const [visibleCount, setVisibleCount] = useState(batchSize)  // Number of visible options (for lazy loading)
+  const [isLoading, setIsLoading] = useState(false)     // Loading state for lazy loading
+  
+  // Refs for DOM manipulation and intersection observer
+  const inputRef = useRef<HTMLInputElement>(null)       // Input field reference
+  const observerRef = useRef<IntersectionObserver | null>(null) // Intersection observer for lazy loading
 
+  // Filter options based on input value with smart matching
   const filteredOptions = options.filter(option => {
-    // If inputValue exactly matches a selected option, show all options
+    // If inputValue exactly matches a selected option, show all options (for better UX)
     const exactMatch = options.some(opt => opt.value === inputValue)
     if (exactMatch && inputValue.length > 0) {
       return true
@@ -52,12 +71,19 @@ export function SmartComboBox({
            option.value.toLowerCase().includes(inputValue.toLowerCase())
   })
 
+  // Get visible options (either all or limited by lazy loading)
   const visibleOptions = enableLazyLoading 
     ? filteredOptions.slice(0, visibleCount)
     : filteredOptions
 
+  // Check if there are more items to load
   const hasMoreItems = enableLazyLoading && visibleCount < filteredOptions.length
 
+  /**
+   * Analyze a value to determine its type and appropriate icon
+   * @param val - The value to analyze
+   * @returns Object with type and icon component
+   */
   const analyzeValue = (val: string) => {
     const tagExists = options.some(option => option.value === val)
     if (tagExists) return { type: 'tag', icon: Tag }
@@ -68,25 +94,31 @@ export function SmartComboBox({
     return { type: 'string', icon: Type }
   }
 
+  // Analyze the current value for display purposes
   const valueAnalysis = analyzeValue(value)
 
-  // Reset visible count when input value changes
+  // Reset visible count and highlight when input value changes
   useEffect(() => {
     setVisibleCount(batchSize)
     setHighlightedIndex(-1)
   }, [inputValue, batchSize])
 
+  // Sync input value with prop value
   useEffect(() => {
     setInputValue(value)
   }, [value])
 
+  // Focus input when dropdown opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus()
     }
   }, [isOpen])
 
-  // Load more items when scrolling to bottom
+  /**
+   * Load more items for lazy loading
+   * Simulates loading delay for better UX visibility
+   */
   const loadMoreItems = useCallback(() => {
     if (hasMoreItems && !isLoading) {
       setIsLoading(true)
@@ -98,7 +130,10 @@ export function SmartComboBox({
     }
   }, [hasMoreItems, isLoading, batchSize, filteredOptions.length])
 
-  // Intersection Observer for lazy loading
+  /**
+   * Intersection Observer callback for lazy loading
+   * Triggers when the last visible item comes into view
+   */
   const lastItemRef = useCallback((node: HTMLLIElement | null) => {
     if (observerRef.current) observerRef.current.disconnect()
     
@@ -115,6 +150,7 @@ export function SmartComboBox({
     }
   }, [hasMoreItems, loadMoreItems])
 
+  // Cleanup intersection observer on unmount
   useEffect(() => {
     return () => {
       if (observerRef.current) {
@@ -123,6 +159,10 @@ export function SmartComboBox({
     }
   }, [])
 
+  /**
+   * Handle input value changes
+   * Updates both local state and calls onChange prop
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     setInputValue(newValue)
@@ -130,8 +170,13 @@ export function SmartComboBox({
     setHighlightedIndex(-1)
   }
 
+  /**
+   * Handle keyboard navigation and interactions
+   * Supports arrow keys, enter, and escape
+   */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
+      // Open dropdown on arrow down
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         setIsOpen(true)
@@ -142,11 +187,13 @@ export function SmartComboBox({
 
     switch (e.key) {
       case 'Escape':
+        // Close dropdown
         setIsOpen(false)
         onOpenChange?.(false)
         break
       case 'ArrowDown':
         e.preventDefault()
+        // Move highlight down, wrapping to top if needed
         setHighlightedIndex(prev => {
           const newIndex = prev < visibleOptions.length - 1 ? prev + 1 : 0
           // Load more items if we're near the end and there are more to load
@@ -158,6 +205,7 @@ export function SmartComboBox({
         break
       case 'ArrowUp':
         e.preventDefault()
+        // Move highlight up, wrapping to bottom if needed
         setHighlightedIndex(prev => 
           prev > 0 ? prev - 1 : visibleOptions.length - 1
         )
@@ -183,6 +231,10 @@ export function SmartComboBox({
     }
   }
 
+  /**
+   * Handle option selection via mouse click
+   * @param optionValue - The value of the selected option
+   */
   const handleOptionClick = (optionValue: string) => {
     setInputValue(optionValue)
     onChange(optionValue)
@@ -190,12 +242,15 @@ export function SmartComboBox({
     onOpenChange?.(false)
   }
 
+  // Get the appropriate icon component for the current value type
   const IconComponent = valueAnalysis.icon
 
   return (
     <div className={`relative ${className}`} style={style}>
+      {/* Main input container with smart styling */}
       <div className="relative border border-zinc-300 dark:border-zinc-600 rounded-lg bg-transparent focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all duration-200">
         <div className="flex items-center px-3 py-2">
+          {/* Smart input field with type-aware styling */}
           <input
             ref={inputRef}
             type="text"
@@ -216,7 +271,9 @@ export function SmartComboBox({
               fontFamily: value && (valueAnalysis.type === 'tag' || valueAnalysis.type === 'number') ? 'var(--font-geist-mono)' : 'var(--font-geist-sans)'
             }}
           />
+          {/* Action buttons and type indicator */}
           <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Clear button */}
             {value && showClear && (
               <button
                 onClick={(e) => {
@@ -230,6 +287,7 @@ export function SmartComboBox({
                 <X className="h-4 w-4" />
               </button>
             )}
+            {/* Type indicator badge */}
             {value && (
               <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono ${
                 valueAnalysis.type === 'tag' 
@@ -245,6 +303,7 @@ export function SmartComboBox({
                 <span>{valueAnalysis.type}</span>
               </div>
             )}
+            {/* Dropdown toggle button */}
             <ChevronDown 
               className={`h-4 w-4 text-zinc-500 transition-transform duration-200 cursor-pointer ${
                 isOpen ? 'rotate-180' : ''
@@ -259,14 +318,17 @@ export function SmartComboBox({
         </div>
       </div>
 
+      {/* Dropdown options list */}
       {isOpen && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto">
           <ul className="py-1">
             {filteredOptions.length === 0 ? (
+              /* No options found message */
               <li className="px-3 py-2 text-zinc-500 text-sm">
                 Type a custom value or search tags...
               </li>
             ) : (
+              /* Render visible options */
               visibleOptions.map((option, index) => (
                 <li
                   key={option.value}
@@ -293,12 +355,14 @@ export function SmartComboBox({
                 </li>
               ))
             )}
+            {/* Loading indicator for lazy loading */}
             {isLoading && (
               <li className="px-3 py-2 text-zinc-500 text-sm flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-blue-600"></div>
                 <span>Loading more...</span>
               </li>
             )}
+            {/* Lazy loading status indicator */}
             {enableLazyLoading && filteredOptions.length > batchSize && !isLoading && (
               <li className="px-3 py-2 text-zinc-400 text-xs text-center border-t border-zinc-200 dark:border-zinc-700">
                 Showing {visibleCount} of {filteredOptions.length}
@@ -308,7 +372,7 @@ export function SmartComboBox({
         </div>
       )}
 
-      {/* Click outside to close */}
+      {/* Click outside overlay to close dropdown */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40"

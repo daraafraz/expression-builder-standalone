@@ -2,48 +2,70 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Check } from 'lucide-react'
 
+/**
+ * OperatorComboBox component for selecting mathematical and comparison operators
+ * 
+ * Features:
+ * - Specialized for operator selection (+, -, *, /, =, >, <, etc.)
+ * - Search functionality across value, label, and display text
+ * - Keyboard navigation support
+ * - Click outside to close
+ * - Customizable styling
+ */
+
+// Type definitions for operator options and component props
 type OperatorOption = {
-  value: string
-  label: string
-  display: string
+  value: string    // Operator value (e.g., '+', '=', '>')
+  label: string    // Full description (e.g., '+ (addition)')
+  display: string  // Display symbol (e.g., '+')
 }
 
 type OperatorComboBoxProps = {
-  options: OperatorOption[]
-  value: string
-  onChange: (value: string) => void
-  onOpenChange?: (isOpen: boolean) => void
-  placeholder?: string
-  className?: string
-  style?: React.CSSProperties
+  options: OperatorOption[]        // Available operator options
+  value: string                    // Currently selected operator value
+  onChange: (value: string) => void // Callback when selection changes
+  onOpenChange?: (isOpen: boolean) => void // Callback when dropdown opens/closes
+  placeholder?: string             // Placeholder text
+  className?: string               // Additional CSS classes
+  style?: React.CSSProperties     // Inline styles
 }
 
 export function OperatorComboBox({ options, value, onChange, onOpenChange, placeholder = "Search...", className = "", style }: OperatorComboBoxProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  // Component state management
+  const [isOpen, setIsOpen] = useState(false)           // Dropdown open/closed state
+  const [searchTerm, setSearchTerm] = useState('')      // Current search input
+  const [highlightedIndex, setHighlightedIndex] = useState(-1) // Currently highlighted option index
+  
+  // Refs for DOM manipulation
+  const inputRef = useRef<HTMLInputElement>(null)       // Input field reference
+  const containerRef = useRef<HTMLDivElement>(null)     // Container reference for click outside detection
 
+  // Filter options based on search term (searches value, label, and display text)
   const filteredOptions = options.filter(option =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
     option.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
     option.display.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Find the currently selected option
   const selectedOption = options.find(option => option.value === value)
 
+  // Focus input when dropdown opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus()
     }
   }, [isOpen])
 
+  // Reset highlight when search term changes
   useEffect(() => {
     setHighlightedIndex(-1)
   }, [searchTerm])
 
-  // Handle click outside to close dropdown
+  /**
+   * Handle click outside to close dropdown
+   * Uses event delegation to detect clicks outside the component
+   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -61,8 +83,13 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
     }
   }, [isOpen, onOpenChange])
 
+  /**
+   * Handle keyboard navigation and interactions
+   * Supports arrow keys, enter, escape, and space
+   */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
+      // Open dropdown on enter, space, or arrow down
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         e.preventDefault()
         setIsOpen(true)
@@ -73,23 +100,28 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
 
     switch (e.key) {
       case 'Escape':
+        // Close dropdown and clear search
         setIsOpen(false)
         setSearchTerm('')
+        onOpenChange?.(false)
         break
       case 'ArrowDown':
         e.preventDefault()
+        // Move highlight down, wrapping to top if needed
         setHighlightedIndex(prev => 
           prev < filteredOptions.length - 1 ? prev + 1 : 0
         )
         break
       case 'ArrowUp':
         e.preventDefault()
+        // Move highlight up, wrapping to bottom if needed
         setHighlightedIndex(prev => 
           prev > 0 ? prev - 1 : filteredOptions.length - 1
         )
         break
       case 'Enter':
         e.preventDefault()
+        // Select highlighted option
         if (highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
           onChange(filteredOptions[highlightedIndex].value)
           setIsOpen(false)
@@ -99,6 +131,10 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
     }
   }
 
+  /**
+   * Handle option selection via mouse click
+   * @param optionValue - The value of the selected option
+   */
   const handleOptionClick = (optionValue: string) => {
     onChange(optionValue)
     setIsOpen(false)
@@ -106,6 +142,9 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
     onOpenChange?.(false)
   }
 
+  /**
+   * Toggle dropdown open/closed state
+   */
   const toggleOpen = () => {
     const newIsOpen = !isOpen
     setIsOpen(newIsOpen)
@@ -114,12 +153,14 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
 
   return (
     <div ref={containerRef} className={`relative ${className}`} style={style}>
+      {/* Main input/display area */}
       <div
         className="relative cursor-pointer"
         onClick={toggleOpen}
       >
         <div className={`flex items-center justify-between px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-transparent text-zinc-900 dark:text-zinc-100 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent ${isOpen ? 'min-w-[160px]' : ''}`}>
           {isOpen ? (
+            /* Search input when dropdown is open */
             <input
               ref={inputRef}
               type="text"
@@ -132,6 +173,7 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
+            /* Display selected operator or placeholder when closed */
             <span 
               className="flex-1 font-mono"
               style={{ 
@@ -141,6 +183,7 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
               {selectedOption ? selectedOption.display : placeholder}
             </span>
           )}
+          {/* Dropdown arrow indicator */}
           <ChevronDown 
             className={`h-4 w-4 text-zinc-500 transition-transform duration-200 ${
               isOpen ? 'rotate-180' : ''
@@ -149,12 +192,15 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
         </div>
       </div>
 
+      {/* Dropdown options list */}
       {isOpen && (
         <div className="absolute top-full left-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto w-[190px]">
           <ul className="py-1">
             {filteredOptions.length === 0 ? (
+              /* No operators found message */
               <li className="px-3 py-2 text-zinc-500 text-sm">No operators found</li>
             ) : (
+              /* Render filtered operator options */
               filteredOptions.map((option, index) => (
                 <li
                   key={option.value}
@@ -182,7 +228,7 @@ export function OperatorComboBox({ options, value, onChange, onOpenChange, place
         </div>
       )}
 
-      {/* Click outside to close */}
+      {/* Click outside overlay to close dropdown */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40"

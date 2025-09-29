@@ -3,12 +3,15 @@
 import { ReactNode, useEffect } from 'react'
 import { X } from 'lucide-react'
 
+/**
+ * Modal component interface
+ */
 interface ModalProps {
-  isOpen: boolean
-  onClose: () => void
-  title: string
-  children: ReactNode
-  className?: string
+  isOpen: boolean        // Whether the modal is currently open
+  onClose: () => void    // Callback function to close the modal
+  title: string          // Modal title text
+  children: ReactNode    // Modal content
+  className?: string     // Additional CSS classes
 }
 
 /**
@@ -22,7 +25,10 @@ interface ModalProps {
  * - Accessible backdrop
  */
 export function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps) {
-  // Handle ESC key press
+  /**
+   * Handle ESC key press and body scroll prevention
+   * Sets up keyboard event listener and prevents background scrolling when modal is open
+   */
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -42,18 +48,19 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
     }
   }, [isOpen, onClose])
 
+  // Don't render anything if modal is closed
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+      {/* Backdrop overlay */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
       
-      {/* Modal Content */}
+      {/* Modal content container */}
       <div 
         className={`
           relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700
@@ -65,7 +72,7 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        {/* Header */}
+        {/* Modal header with title and close button */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-700">
           <h2 id="modal-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
             {title}
@@ -79,7 +86,7 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
           </button>
         </div>
         
-        {/* Content */}
+        {/* Scrollable content area */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {children}
         </div>

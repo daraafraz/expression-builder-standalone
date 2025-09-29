@@ -2,22 +2,35 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown, Check, X } from 'lucide-react'
 
+/**
+ * ComboBox component with lazy loading and search functionality
+ * 
+ * Features:
+ * - Search/filter options as you type
+ * - Lazy loading for large option lists
+ * - Keyboard navigation (arrow keys, enter, escape)
+ * - Click outside to close
+ * - Clear button for selected values
+ * - Customizable styling and behavior
+ */
+
+// Type definitions for component props and options
 type ComboBoxOption = {
-  value: string
-  label: string
+  value: string  // Unique identifier for the option
+  label: string  // Display text for the option
 }
 
 type ComboBoxProps = {
-  options: ComboBoxOption[]
-  value: string
-  onChange: (value: string) => void
-  onOpenChange?: (isOpen: boolean) => void
-  placeholder?: string
-  className?: string
-  style?: React.CSSProperties
-  showClear?: boolean
-  enableLazyLoading?: boolean
-  batchSize?: number
+  options: ComboBoxOption[]        // Array of available options
+  value: string                    // Currently selected value
+  onChange: (value: string) => void // Callback when selection changes
+  onOpenChange?: (isOpen: boolean) => void // Callback when dropdown opens/closes
+  placeholder?: string             // Placeholder text when no value selected
+  className?: string               // Additional CSS classes
+  style?: React.CSSProperties     // Inline styles
+  showClear?: boolean              // Whether to show clear button
+  enableLazyLoading?: boolean      // Enable lazy loading for large lists
+  batchSize?: number               // Number of items to load per batch
 }
 
 export function ComboBox({ 
@@ -32,41 +45,52 @@ export function ComboBox({
   enableLazyLoading = true,
   batchSize = 20
 }: ComboBoxProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  const [visibleCount, setVisibleCount] = useState(batchSize)
-  const [isLoading, setIsLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLUListElement>(null)
-  const observerRef = useRef<IntersectionObserver | null>(null)
+  // Component state management
+  const [isOpen, setIsOpen] = useState(false)           // Dropdown open/closed state
+  const [searchTerm, setSearchTerm] = useState('')      // Current search input
+  const [highlightedIndex, setHighlightedIndex] = useState(-1) // Currently highlighted option index
+  const [visibleCount, setVisibleCount] = useState(batchSize)  // Number of visible options (for lazy loading)
+  const [isLoading, setIsLoading] = useState(false)     // Loading state for lazy loading
+  
+  // Refs for DOM manipulation and intersection observer
+  const inputRef = useRef<HTMLInputElement>(null)       // Input field reference
+  const listRef = useRef<HTMLUListElement>(null)        // Options list reference
+  const observerRef = useRef<IntersectionObserver | null>(null) // Intersection observer for lazy loading
 
+  // Filter options based on search term (case-insensitive)
   const filteredOptions = options.filter(option =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
     option.value.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Get visible options (either all or limited by lazy loading)
   const visibleOptions = enableLazyLoading 
     ? filteredOptions.slice(0, visibleCount)
     : filteredOptions
 
+  // Check if there are more items to load
   const hasMoreItems = enableLazyLoading && visibleCount < filteredOptions.length
 
+  // Find the currently selected option
   const selectedOption = options.find(option => option.value === value)
 
-  // Reset visible count when search term changes
+  // Reset visible count and highlight when search term changes
   useEffect(() => {
     setVisibleCount(batchSize)
     setHighlightedIndex(-1)
   }, [searchTerm, batchSize])
 
+  // Focus input when dropdown opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus()
     }
   }, [isOpen])
 
-  // Load more items when scrolling to bottom
+  /**
+   * Load more items for lazy loading
+   * Simulates loading delay for better UX visibility
+   */
   const loadMoreItems = useCallback(() => {
     if (hasMoreItems && !isLoading) {
       setIsLoading(true)
@@ -78,7 +102,10 @@ export function ComboBox({
     }
   }, [hasMoreItems, isLoading, batchSize, filteredOptions.length])
 
-  // Intersection Observer for lazy loading
+  /**
+   * Intersection Observer callback for lazy loading
+   * Triggers when the last visible item comes into view
+   */
   const lastItemRef = useCallback((node: HTMLLIElement | null) => {
     if (observerRef.current) observerRef.current.disconnect()
     
@@ -95,6 +122,7 @@ export function ComboBox({
     }
   }, [hasMoreItems, loadMoreItems])
 
+  // Cleanup intersection observer on unmount
   useEffect(() => {
     return () => {
       if (observerRef.current) {
@@ -103,8 +131,13 @@ export function ComboBox({
     }
   }, [])
 
+  /**
+   * Handle keyboard navigation and interactions
+   * Supports arrow keys, enter, escape, and space
+   */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
+      // Open dropdown on enter, space, or arrow down
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         e.preventDefault()
         setIsOpen(true)
@@ -115,12 +148,14 @@ export function ComboBox({
 
     switch (e.key) {
       case 'Escape':
+        // Close dropdown and clear search
         setIsOpen(false)
         setSearchTerm('')
         onOpenChange?.(false)
         break
       case 'ArrowDown':
         e.preventDefault()
+        // Move highlight down, wrapping to top if needed
         setHighlightedIndex(prev => {
           const newIndex = prev < visibleOptions.length - 1 ? prev + 1 : 0
           // Load more items if we're near the end and there are more to load
@@ -132,12 +167,14 @@ export function ComboBox({
         break
       case 'ArrowUp':
         e.preventDefault()
+        // Move highlight up, wrapping to bottom if needed
         setHighlightedIndex(prev => 
           prev > 0 ? prev - 1 : visibleOptions.length - 1
         )
         break
       case 'Enter':
         e.preventDefault()
+        // Select highlighted option or accept current input
         if (highlightedIndex >= 0 && visibleOptions[highlightedIndex]) {
           onChange(visibleOptions[highlightedIndex].value)
           setIsOpen(false)
@@ -148,6 +185,10 @@ export function ComboBox({
     }
   }
 
+  /**
+   * Handle option selection via mouse click
+   * @param optionValue - The value of the selected option
+   */
   const handleOptionClick = (optionValue: string) => {
     onChange(optionValue)
     setIsOpen(false)
@@ -157,6 +198,7 @@ export function ComboBox({
 
   return (
     <div className={`relative ${className}`} style={style}>
+      {/* Main input/display area */}
       <div
         className="relative cursor-pointer"
         onClick={() => {
@@ -167,6 +209,7 @@ export function ComboBox({
       >
         <div className="flex items-center px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-transparent text-zinc-900 dark:text-zinc-100 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
           {isOpen ? (
+            /* Search input when dropdown is open */
             <input
               ref={inputRef}
               type="text"
@@ -179,6 +222,7 @@ export function ComboBox({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
+            /* Display selected value or placeholder when closed */
             <span 
               className={`flex-1 min-w-0 truncate ${selectedOption ? 'font-mono' : ''}`}
               style={{ 
@@ -189,6 +233,7 @@ export function ComboBox({
               {selectedOption ? selectedOption.label : placeholder}
             </span>
           )}
+          {/* Action buttons (clear and dropdown arrow) */}
           <div className="flex items-center gap-1 flex-shrink-0">
             {value && showClear && (
               <button
@@ -212,12 +257,15 @@ export function ComboBox({
         </div>
       </div>
 
+      {/* Dropdown options list */}
       {isOpen && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-auto">
           <ul ref={listRef} className="py-1">
             {filteredOptions.length === 0 ? (
+              /* No options found message */
               <li className="px-3 py-2 text-zinc-500 text-sm">No options found</li>
             ) : (
+              /* Render visible options */
               visibleOptions.map((option, index) => (
                 <li
                   key={option.value}
@@ -242,12 +290,14 @@ export function ComboBox({
                 </li>
               ))
             )}
+            {/* Loading indicator for lazy loading */}
             {isLoading && (
               <li className="px-3 py-2 text-zinc-500 text-sm flex items-center gap-2 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-300 border-t-blue-600"></div>
                 <span>Loading more...</span>
               </li>
             )}
+            {/* Lazy loading status indicator */}
             {enableLazyLoading && filteredOptions.length > batchSize && !isLoading && (
               <li className="px-3 py-2 text-zinc-400 text-xs text-center border-t border-zinc-200 dark:border-zinc-700">
                 Showing {visibleCount} of {filteredOptions.length}
@@ -257,7 +307,7 @@ export function ComboBox({
         </div>
       )}
 
-      {/* Click outside to close */}
+      {/* Click outside overlay to close dropdown */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40"
