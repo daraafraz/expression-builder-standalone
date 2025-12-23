@@ -187,13 +187,6 @@ export default function ExpressionBuilder() {
               </button>
             </div>
 
-            {/* Live Expression Preview */}
-            <ExpressionPreview
-              expression={expression}
-              valueMode={valueMode}
-              availableTags={availableTags}
-            />
-
             {/* Expression Input Controls */}
             <div className="flex items-end gap-4 flex-wrap">
               {/* Left Tag Selection */}
@@ -363,6 +356,15 @@ export default function ExpressionBuilder() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Live Expression Preview */}
+            <div className="mt-6">
+              <ExpressionPreview
+                expression={expression}
+                valueMode={valueMode}
+                availableTags={availableTags}
+              />
             </div>
 
             {/* Live Natural Language Description */}
