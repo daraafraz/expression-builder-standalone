@@ -14,11 +14,7 @@ import { ChevronDown, Check } from 'lucide-react'
  */
 
 // Type definitions for operator options and component props
-type OperatorOption = {
-  value: string    // Operator value (e.g., '+', '=', '>')
-  label: string    // Full description (e.g., '+ (addition)')
-  display: string  // Display symbol (e.g., '+')
-}
+import type { OperatorOption } from '@/types'
 
 type OperatorComboBoxProps = {
   options: OperatorOption[]        // Available operator options
