@@ -1,140 +1,70 @@
 # Expression Builder
 
-A powerful, no-code interface for building complex expressions with support for simple comparisons, nested calculations, and multiple output formats (JSON and JSONLogic).
+Build conditional logic for industrial operations without writing code.
 
-![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black?style=flat-square&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
-![React](https://img.shields.io/badge/React-19.1.0-61dafb?style=flat-square&logo=react)
+## What Problem It Solves
 
-## Features
+Operations teams in oil & gas, manufacturing, and industrial settings need to configure conditions for alarms, triggers, and automated responses. Writing these conditions in code is error-prone and requires developer involvement. Expression Builder provides a visual, no-code interface that lets operators build complex conditional logic safely.
 
-- 🎯 **No-Code Interface**: Build complex expressions visually without writing code
-- 🔢 **Nested Calculations**: Support for calculations like `Tag1 = (Tag2 + Tag3)`
-- 📊 **Multiple Output Formats**: Generate both JSON and JSONLogic formats
-- 🏷️ **Custom Tags**: Configure your own tag names for your data fields
-- 💬 **Natural Language Preview**: See human-readable descriptions of your expressions
-- 🎨 **Modern UI**: Clean, responsive interface with dark mode support
-- ⚡ **Live Updates**: Real-time preview of expression output
+## Who It Is For
 
-## Getting Started
+- **Operations Engineers** configuring alarm conditions in SCADA systems
+- **Process Control Engineers** setting up automated triggers
+- **Industrial Automation Teams** building rule-based logic
+- **Developers** who need to generate JSONLogic expressions for rule engines
 
-### Prerequisites
+## Why This Exists
 
-- Node.js 18+ 
-- npm, yarn, pnpm, or bun
+Industrial operations rely on conditional logic for safety and efficiency. Traditional approaches require:
+- Writing code (error-prone, requires developers)
+- Manual JSON/JSONLogic creation (tedious, syntax errors)
+- Complex rule engine interfaces (steep learning curve)
 
-### Installation
+Expression Builder removes these barriers by providing a visual interface that generates production-ready JSONLogic output. It was created to make conditional logic configuration accessible to operations teams who understand the business logic but shouldn't need to write code.
+
+## What This Project Does
+
+- **Visual Expression Building**: Create conditions through dropdowns and inputs, not code
+- **Nested Calculations**: Support for expressions like `WELL_B1_PRESSURE = (WELL_B1_TEMP + 50)`
+- **Multiple Output Formats**: Generate both JSON and JSONLogic formats
+- **Custom Tag Configuration**: Configure your own sensor tags and data points
+- **Natural Language Preview**: See human-readable descriptions of your expressions
+- **Live Output**: Real-time preview of generated JSON/JSONLogic
+
+## What This Project Does NOT Do
+
+- **Execute Logic**: This tool generates expressions; it does not evaluate them
+- **Connect to SCADA Systems**: It's a standalone tool for building expressions
+- **Store Expressions**: No database or persistence layer
+- **Handle Complex Logic**: Currently supports single conditions, not multi-condition rules (AND/OR)
+- **Validate Against Real Data**: No connection to live sensor data
+
+## Quick Start
+
+### Install
 
 ```bash
-# Clone the repository
 git clone https://github.com/daraafraz/expression-builder-standalone.git
-
-# Navigate to the project directory
 cd expression-builder-standalone
-
-# Install dependencies
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
-### Development
+### Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Build for Production
+### Minimal Example
 
-```bash
-npm run build
-npm start
-```
+1. Select a tag (e.g., `WELL_B1_PRESSURE`)
+2. Choose an operator (e.g., `>`)
+3. Enter a value (e.g., `100`)
+4. Copy the generated JSONLogic output
 
-## Project Structure
-
-```
-expression-builder-standalone/
-├── app/                    # Next.js app directory
-│   ├── page.tsx           # Main application page
-│   ├── layout.tsx         # Root layout component
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── expression/        # Expression-specific components
-│   │   ├── ExpressionPreview.tsx
-│   │   ├── OutputDisplay.tsx
-│   │   └── OutputTabs.tsx
-│   └── ui/                # Reusable UI components
-│       ├── combobox.tsx
-│       ├── modal.tsx
-│       ├── operator-combobox.tsx
-│       └── smart-combobox.tsx
-├── lib/                   # Utility functions and business logic
-│   ├── expression-analyzer.ts    # Expression analysis utilities
-│   ├── expression-generator.ts    # JSON/JSONLogic generators
-│   ├── natural-language.tsx       # Natural language generation
-│   └── tag-parser.ts              # Tag parsing utilities
-├── types/                 # TypeScript type definitions
-│   └── index.ts
-├── constants/             # Application constants
-│   └── index.ts
-└── public/               # Static assets
-```
-
-## Usage
-
-### Building Expressions
-
-1. **Select a Tag**: Choose the left operand tag from the dropdown
-2. **Choose an Operator**: Select a comparison operator (=, >, <, !=, >=, <=)
-3. **Set the Right Value**: 
-   - **Value Mode**: Enter a tag, number, or string constant
-   - **Calculation Mode**: Build a nested calculation like `(Tag2 + Tag3)`
-
-### Example Expressions
-
-**Simple Comparison:**
-```
-WELL_B1_PRESSURE > 100
-```
-
-**Tag Comparison:**
-```
-WELL_B1_PRESSURE > WELL_B2_PRESSURE
-```
-
-**With Calculation:**
-```
-WELL_B1_PRESSURE = (WELL_B1_TEMP + 50)
-```
-
-### Output Formats
-
-#### JSON Format
-```json
-{
-  "type": "comparison",
-  "left": {
-    "type": "tag",
-    "value": "WELL_B1_PRESSURE"
-  },
-  "operator": ">",
-  "right": {
-    "type": "constant",
-    "value": 100
-  }
-}
-```
-
-#### JSONLogic Format
+Result:
 ```json
 {
   ">": [
@@ -144,83 +74,84 @@ WELL_B1_PRESSURE = (WELL_B1_TEMP + 50)
 }
 ```
 
-The JSONLogic format can be evaluated using libraries like [json-logic-js](https://github.com/jwadhams/json-logic-js).
+## Usage
 
-## Configuration
+### Building Simple Conditions
 
-### Custom Tags
+1. **Select Tag**: Choose the left operand from the dropdown
+2. **Choose Operator**: Select comparison operator (=, >, <, !=, >=, <=)
+3. **Set Value**: Enter a tag, number, or string constant
 
-Click the "Configure Tags" button to customize available tags. Tags should be comma-separated:
+Example: `WELL_B1_PRESSURE > 100`
 
+### Building Conditions with Calculations
+
+1. Switch to "Calculation" mode
+2. Build nested expressions like `WELL_B1_PRESSURE = (WELL_B1_TEMP + 50)`
+
+### Customizing Tags
+
+Click "Configure Tags" to add your own sensor tags. Use comma-separated format:
 ```
-WELL_B1_PRESSURE, WELL_B1_TEMP, WELL_B2_PRESSURE, TANK_10_LEVEL
-```
-
-Tags are case-sensitive and should use descriptive names for your data fields.
-
-## API Reference
-
-### Types
-
-All TypeScript types are exported from `@/types`:
-
-```typescript
-import type { ExpressionType, ValueMode, OutputFormat } from '@/types'
+WELL_B1_PRESSURE, WELL_B1_TEMP, TANK_10_LEVEL
 ```
 
-### Utilities
+### Output Formats
 
-#### Expression Analysis
-```typescript
-import { analyzeRightValue, analyzeSimpleValue } from '@/lib/expression-analyzer'
+- **JSONLogic** (default): Standard format for rule engines, compatible with [json-logic-js](https://github.com/jwadhams/json-logic-js)
+- **JSON**: Structured format with type information
 
-const analysis = analyzeRightValue(expression, valueMode, availableTags)
-```
+Switch between formats using the tabs in the output section.
 
-#### Expression Generation
-```typescript
-import { generateJSON, generateJSONLogic } from '@/lib/expression-generator'
+## How It Works
 
-const json = generateJSON(expression, rightAnalysis)
-const jsonLogic = generateJSONLogic(expression, rightAnalysis)
-```
+Expression Builder is a Next.js application that:
+1. Captures user input through visual controls
+2. Analyzes the expression structure (tags vs constants, calculations)
+3. Generates JSONLogic or JSON output in real-time
+4. Provides natural language preview for validation
 
-#### Tag Parsing
-```typescript
-import { parseTags, isValidTag } from '@/lib/tag-parser'
-
-const tags = parseTags("tag1, tag2, tag3")
-const isValid = isValidTag("tag1", availableTags)
-```
+The generated expressions can be used directly in rule engines, SCADA systems, or any system that accepts JSONLogic format.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+**Quick contribution guide:**
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a branch (`git checkout -b feature/your-feature`)
+3. Make your changes
+4. Test with `npm run build`
+5. Submit a pull request
 
-### Development Guidelines
+For detailed instructions, examples, and expectations, please read [CONTRIBUTING.md](CONTRIBUTING.md).
 
-- Follow TypeScript best practices
-- Add JSDoc comments for public APIs
-- Ensure all tests pass
-- Update documentation as needed
+## Project Status
+
+**Status**: Stable and actively maintained
+
+**Response Times**: 
+- Issues: Typically within 3-5 business days
+- Pull Requests: Review within 1 week
+- Questions: Best effort, may take a few days
+
+**Maintainer Availability**: Limited but committed to keeping the project healthy. If you need urgent support, please open an issue and we'll prioritize accordingly.
+
+**Current Focus**: 
+- Bug fixes and stability improvements
+- Documentation enhancements
+- Community contributions
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- UI components styled with [Tailwind CSS](https://tailwindcss.com/)
-- Icons from [Lucide React](https://lucide.dev/)
-- JSONLogic format specification: [jsonlogic.com](https://jsonlogic.com/)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
-For issues, questions, or contributions, please open an issue on the [GitHub repository](https://github.com/daraafraz/expression-builder-standalone).
+- **Issues**: [GitHub Issues](https://github.com/daraafraz/expression-builder-standalone/issues)
+- **Questions**: Open an issue with the `question` label
+- **Contributions**: See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+Built with [Next.js](https://nextjs.org/), [TypeScript](https://www.typescriptlang.org/), and [React](https://react.dev/).
