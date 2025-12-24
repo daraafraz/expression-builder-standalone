@@ -1,482 +1,220 @@
 /**
- * Expression Builder - Main Page Component
+ * Expression Builder - Homepage
  * 
- * A no-code interface for building complex expressions with support for:
- * - Simple comparisons (Tag1 = Tag2)
- * - Nested calculations (Tag1 = (Tag2 + Tag3))
- * - Live JSON and JSONLogic output
- * - Custom tag configuration
- * - Natural language preview
+ * Landing page describing the project, its purpose, and features
  * 
  * @module app/page
  */
 
-'use client'
+import Link from 'next/link'
+import { ArrowRight, Code, Zap, Settings, FileJson, CheckCircle2 } from 'lucide-react'
 
-import { useState, useMemo } from 'react'
-import { Trash2, Settings } from 'lucide-react'
-import { SmartComboBox } from '@/components/ui/smart-combobox'
-import { OperatorComboBox } from '@/components/ui/operator-combobox'
-import { Modal } from '@/components/ui/modal'
-import { ExpressionPreview } from '@/components/expression/ExpressionPreview'
-import { OutputDisplay } from '@/components/expression/OutputDisplay'
-
-// Types
-import type {
-  ExpressionType,
-  ValueMode,
-  OutputFormat
-} from '@/types'
-
-// Constants
-import {
-  COMPARISON_OPERATORS,
-  MATH_OPERATORS,
-  generateDefaultTags
-} from '@/constants'
-
-// Utilities
-import { parseTags, isValidTag, getFirstTag } from '@/lib/tag-parser'
-import { analyzeRightValue } from '@/lib/expression-analyzer'
-import { generateJSON, generateJSONLogic } from '@/lib/expression-generator'
-import { generateStyledNaturalLanguage } from '@/lib/natural-language'
-
-/**
- * Initial expression state
- */
-const INITIAL_EXPRESSION: ExpressionType = {
-  leftTag: '',
-  operator: '=',
-  rightValue: '',
-  calculation: {
-    leftTag: '',
-    operator: '+',
-    rightValue: ''
-  }
-}
-
-/**
- * Main Expression Builder component
- * 
- * @returns JSX element with the expression builder interface
- */
-export default function ExpressionBuilder() {
-  // State management
-  const [customTags, setCustomTags] = useState(generateDefaultTags())
-  const [leftTagOpen, setLeftTagOpen] = useState(false)
-  const [operatorOpen, setOperatorOpen] = useState(false)
-  const [calcLeftTagOpen, setCalcLeftTagOpen] = useState(false)
-  const [calcOperatorOpen, setCalcOperatorOpen] = useState(false)
-  const [rightValueOpen, setRightValueOpen] = useState(false)
-  const [calcRightValueOpen, setCalcRightValueOpen] = useState(false)
-  const [valueMode, setValueMode] = useState<ValueMode>('value')
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
-  const [tempCustomTags, setTempCustomTags] = useState('')
-  const [outputTab, setOutputTab] = useState<OutputFormat>('jsonlogic')
-  const [expression, setExpression] = useState<ExpressionType>(INITIAL_EXPRESSION)
-
-  // Computed values
-  const availableTags = useMemo(() => parseTags(customTags), [customTags])
-  const selectedOperator = useMemo(
-    () => COMPARISON_OPERATORS.find(op => op.value === expression.operator),
-    [expression.operator]
-  )
-
-  // Expression analysis and generation
-  const rightAnalysis = useMemo(
-    () => analyzeRightValue(expression, valueMode, availableTags),
-    [expression, valueMode, availableTags]
-  )
-
-  const jsonOutput = useMemo(
-    () => JSON.stringify(generateJSON(expression, rightAnalysis), null, 2),
-    [expression, rightAnalysis]
-  )
-
-  const jsonLogicOutput = useMemo(
-    () => JSON.stringify(generateJSONLogic(expression, rightAnalysis), null, 2),
-    [expression, rightAnalysis]
-  )
-
-  // Event handlers
-  const handleTagsChange = (newTags: string) => {
-    setCustomTags(newTags)
-    const parsedTags = parseTags(newTags)
-    if (parsedTags.length > 0) {
-      const firstTag = getFirstTag(parsedTags)
-      setExpression(prev => ({
-        ...prev,
-        leftTag: firstTag,
-        rightValue: '',
-        calculation: {
-          leftTag: firstTag,
-          operator: '+',
-          rightValue: ''
-        }
-      }))
-    }
-  }
-
-  const handleOpenModal = () => {
-    setTempCustomTags(customTags)
-    setIsConfigModalOpen(true)
-  }
-
-  const handleSaveTags = () => {
-    handleTagsChange(tempCustomTags)
-    setIsConfigModalOpen(false)
-  }
-
-  const handleCancelTags = () => {
-    setTempCustomTags(customTags)
-    setIsConfigModalOpen(false)
-  }
-
-  const handleResetTags = () => {
-    setTempCustomTags(generateDefaultTags())
-  }
-
-  const handleLeftTagChange = (value: string) => {
-    if (isValidTag(value, availableTags) || value === '') {
-      setExpression(prev => ({ ...prev, leftTag: value }))
-    }
-  }
-
-  const handleCalcLeftTagChange = (value: string) => {
-    if (isValidTag(value, availableTags) || value === '') {
-      setExpression(prev => ({
-        ...prev,
-        calculation: { ...prev.calculation!, leftTag: value }
-      }))
-    }
-  }
-
-  const handleValueModeChange = (mode: ValueMode) => {
-    setValueMode(mode)
-    setExpression(prev => ({ ...prev, rightValue: '' }))
-  }
-
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-800">
-      <main className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
-          {/* Application Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-bold text-black dark:text-white">
+      <main className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto space-y-16">
+          {/* Hero Section */}
+          <div className="text-center space-y-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-black dark:text-white">
               Expression Builder
             </h1>
-            <p className="text-zinc-600 dark:text-zinc-400">
-              No-code expression builder with live JSON and JSONLogic output
+            <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
+              Build conditional logic for industrial operations without writing code.
+              Generate production-ready JSONLogic expressions through a visual interface.
+            </p>
+            <div className="flex items-center justify-center gap-4 pt-4">
+              <Link
+                href="/demo"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+              >
+                Try Demo
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a
+                href="https://github.com/daraafraz/expression-builder-standalone"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+              >
+                View on GitHub
+              </a>
+            </div>
+          </div>
+
+          {/* Problem Statement */}
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-8 shadow-lg">
+            <h2 className="text-2xl font-semibold text-black dark:text-white mb-4">
+              The Problem
+            </h2>
+            <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              Operations teams in oil & gas, manufacturing, and industrial settings need to configure 
+              conditions for alarms, triggers, and automated responses. Writing these conditions in code 
+              is error-prone and requires developer involvement. Manual JSON/JSONLogic creation is tedious 
+              and prone to syntax errors.
             </p>
           </div>
 
-          {/* Main Expression Builder Interface */}
+          {/* Solution */}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-8 shadow-lg">
-            {/* Header with configuration button */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-black dark:text-white">
-                Define Condition
-              </h2>
-              <button
-                onClick={handleOpenModal}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg transition-colors"
-                aria-label="Configure tags"
-              >
-                <Settings className="h-4 w-4" />
-                Configure Tags
-              </button>
-            </div>
+            <h2 className="text-2xl font-semibold text-black dark:text-white mb-4">
+              The Solution
+            </h2>
+            <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4">
+              Expression Builder provides a visual, no-code interface that lets operators build complex 
+              conditional logic safely. It generates production-ready JSONLogic output that can be used 
+              directly in rule engines, SCADA systems, or any system that accepts JSONLogic format.
+            </p>
+            <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed">
+              No coding required. No syntax errors. Just point, click, and generate.
+            </p>
+          </div>
 
-            {/* Expression Input Controls */}
-            <div className="flex items-end gap-4 flex-wrap">
-              {/* Left Tag Selection */}
-              <div className="flex flex-col gap-2 min-w-0">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Tag
-                </label>
-                <SmartComboBox
-                  options={availableTags}
-                  value={expression.leftTag}
-                  onChange={handleLeftTagChange}
-                  onOpenChange={setLeftTagOpen}
-                  placeholder="Select tag..."
-                  className="w-auto min-w-[160px] transition-all duration-300 ease-out"
-                  style={{
-                    width: leftTagOpen
-                      ? '200px'
-                      : `${Math.max(180, expression.leftTag.length * 10 + 140)}px`
-                  }}
-                />
-              </div>
-
-              {/* Comparison Operator Selection */}
-              <div className="flex flex-col gap-2 min-w-0">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Operator
-                </label>
-                <OperatorComboBox
-                  options={COMPARISON_OPERATORS}
-                  value={expression.operator}
-                  onChange={value =>
-                    setExpression(prev => ({ ...prev, operator: value }))
-                  }
-                  onOpenChange={setOperatorOpen}
-                  placeholder="Search operators..."
-                  className="w-auto min-w-[60px] transition-all duration-300 ease-out"
-                  style={{
-                    width: operatorOpen
-                      ? '160px'
-                      : `${Math.max(60, (selectedOperator?.display?.length || 2) * 12 + 60)}px`
-                  }}
-                />
-              </div>
-
-              {/* Right Value Input with Mode Toggle */}
-              <div className="flex flex-col gap-2 min-w-0">
-                {/* Value Mode Toggle */}
-                <div className="flex items-center gap-2">
-                  <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
-                    <button
-                      onClick={() => handleValueModeChange('value')}
-                      className={`px-2 py-1 text-sm font-medium rounded transition-colors ${
-                        valueMode === 'value'
-                          ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
-                      }`}
-                      aria-label="Value mode"
-                    >
-                      Value
-                    </button>
-                    <button
-                      onClick={() => handleValueModeChange('calculation')}
-                      className={`px-2 py-1 text-sm font-medium rounded transition-colors ${
-                        valueMode === 'calculation'
-                          ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
-                      }`}
-                      aria-label="Calculation mode"
-                    >
-                      Calculation
-                    </button>
+          {/* Key Features */}
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-8 shadow-lg">
+            <h2 className="text-2xl font-semibold text-black dark:text-white mb-6">
+              Thoughtfully Designed Features
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Feature 1 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <Code className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
+                  <h3 className="text-lg font-semibold text-black dark:text-white">
+                    No-Code Interface
+                  </h3>
                 </div>
-
-                {/* Value Input Mode */}
-                {valueMode === 'value' ? (
-                  <SmartComboBox
-                    options={availableTags}
-                    value={expression.rightValue}
-                    onChange={value =>
-                      setExpression(prev => ({ ...prev, rightValue: value }))
-                    }
-                    onOpenChange={setRightValueOpen}
-                    placeholder="Type value or select tag..."
-                    className="w-auto min-w-[280px] transition-all duration-300 ease-out"
-                    style={{
-                      width: rightValueOpen
-                        ? '320px'
-                        : `${Math.max(280, expression.rightValue.length * 10 + 140)}px`
-                    }}
-                  />
-                ) : (
-                  /* Calculation Input Mode */
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-mono text-zinc-400 dark:text-zinc-500 select-none">
-                      (
-                    </span>
-
-                    {/* Calculation Left Tag */}
-                    <SmartComboBox
-                      options={availableTags}
-                      value={expression.calculation?.leftTag || ''}
-                      onChange={handleCalcLeftTagChange}
-                      onOpenChange={setCalcLeftTagOpen}
-                      placeholder="Select tag..."
-                      className="w-auto min-w-[160px] transition-all duration-300 ease-out"
-                      style={{
-                        width: calcLeftTagOpen
-                          ? '200px'
-                          : `${Math.max(180, (expression.calculation?.leftTag || '').length * 10 + 140)}px`
-                      }}
-                    />
-
-                    {/* Calculation Mathematical Operator */}
-                    <OperatorComboBox
-                      options={MATH_OPERATORS}
-                      value={expression.calculation?.operator || '+'}
-                      onChange={value =>
-                        setExpression(prev => ({
-                          ...prev,
-                          calculation: { ...prev.calculation!, operator: value }
-                        }))
-                      }
-                      onOpenChange={setCalcOperatorOpen}
-                      placeholder="Op..."
-                      className="w-auto min-w-[50px] transition-all duration-300 ease-out"
-                      style={{
-                        width: calcOperatorOpen
-                          ? '200px'
-                          : `${Math.max(50, (expression.calculation?.operator || '+').length * 12 + 50)}px`
-                      }}
-                    />
-
-                    {/* Calculation Right Value */}
-                    <SmartComboBox
-                      options={availableTags}
-                      value={expression.calculation?.rightValue || ''}
-                      onChange={value =>
-                        setExpression(prev => ({
-                          ...prev,
-                          calculation: { ...prev.calculation!, rightValue: value }
-                        }))
-                      }
-                      onOpenChange={setCalcRightValueOpen}
-                      placeholder="Type value or select tag..."
-                      className="w-auto min-w-[280px] transition-all duration-300 ease-out"
-                      style={{
-                        width: calcRightValueOpen
-                          ? '320px'
-                          : `${Math.max(280, (expression.calculation?.rightValue || '').length * 10 + 140)}px`
-                      }}
-                    />
-
-                    <span className="text-2xl font-mono text-zinc-400 dark:text-zinc-500 select-none">
-                      )
-                    </span>
-
-                    {/* Remove Calculation Mode Button */}
-                    <button
-                      onClick={() => handleValueModeChange('value')}
-                      className="ml-2 px-2 py-2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                      title="Remove calculation"
-                      aria-label="Remove calculation"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                  Build expressions through dropdowns and inputs. No programming knowledge required. 
+                  Designed for operations teams who understand the business logic.
+                </p>
               </div>
-            </div>
 
-            {/* Live Expression Preview */}
-            <div className="mt-6">
-              <ExpressionPreview
-                expression={expression}
-                valueMode={valueMode}
-                availableTags={availableTags}
-              />
-            </div>
+              {/* Feature 2 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <Zap className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-black dark:text-white">
+                    Nested Calculations
+                  </h3>
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                  Support for complex expressions like <code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 rounded">WELL_B1_PRESSURE = (WELL_B1_TEMP + 50)</code>. 
+                  Build calculations within conditions seamlessly.
+                </p>
+              </div>
 
-            {/* Live Natural Language Description */}
-            <div className="mt-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {(valueMode === 'value' && expression.rightValue) ||
-              (valueMode === 'calculation' && expression.calculation?.rightValue)
-                ? generateStyledNaturalLanguage(
-                    expression,
-                    valueMode,
-                    availableTags
-                  )
-                : 'Enter a value to see natural language description...'}
+              {/* Feature 3 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                    <FileJson className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-black dark:text-white">
+                    Multiple Output Formats
+                  </h3>
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                  Generate both JSON and JSONLogic formats. JSONLogic is the standard format for rule 
+                  engines and can be evaluated with libraries like json-logic-js.
+                </p>
+              </div>
+
+              {/* Feature 4 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                    <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-black dark:text-white">
+                    Custom Tag Configuration
+                  </h3>
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                  Configure your own sensor tags and data points. Perfect for industrial settings with 
+                  specific naming conventions. Tags are case-sensitive and fully customizable.
+                </p>
+              </div>
+
+              {/* Feature 5 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-pink-100 dark:bg-pink-900 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-black dark:text-white">
+                    Live Preview & Validation
+                  </h3>
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                  See your expression in real-time with syntax highlighting. Get natural language 
+                  descriptions to validate your logic before generating output.
+                </p>
+              </div>
+
+              {/* Feature 6 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-cyan-100 dark:bg-cyan-900 rounded-lg">
+                    <Zap className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-black dark:text-white">
+                    Production Ready
+                  </h3>
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+                  Generated expressions are immediately usable in production systems. No manual editing 
+                  or syntax correction needed. Copy and paste into your rule engine.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Tag Configuration Modal */}
-          <Modal
-            isOpen={isConfigModalOpen}
-            onClose={handleCancelTags}
-            title="Configure Available Tags"
-          >
-            <div className="space-y-6">
-              {/* Tag Input Form */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Enter comma-separated tags:
-                </label>
-                <textarea
-                  value={tempCustomTags}
-                  onChange={e => setTempCustomTags(e.target.value)}
-                  placeholder="pressure, temperature, speed, altitude, status, mode"
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-500 focus:border-transparent resize-none"
-                  rows={4}
-                  aria-label="Tag input"
-                />
-                <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                  💡 Tags are case-sensitive and should be descriptive names for
-                  your data fields.
-                </div>
-              </div>
+          {/* Use Cases */}
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-8 shadow-lg">
+            <h2 className="text-2xl font-semibold text-black dark:text-white mb-4">
+              Who It&apos;s For
+            </h2>
+            <ul className="space-y-3 text-zinc-700 dark:text-zinc-300">
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <span><strong>Operations Engineers</strong> configuring alarm conditions in SCADA systems</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <span><strong>Process Control Engineers</strong> setting up automated triggers</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <span><strong>Industrial Automation Teams</strong> building rule-based logic</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <span><strong>Developers</strong> who need to generate JSONLogic expressions for rule engines</span>
+              </li>
+            </ul>
+          </div>
 
-              {/* Live Tag Preview */}
-              <div>
-                <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Preview Available Tags:
-                </div>
-                <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-600 min-h-[100px]">
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                    {tempCustomTags.trim() ? (
-                      (() => {
-                        const tempTags = parseTags(tempCustomTags)
-                        return tempTags.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {tempTags.map(tag => (
-                              <span
-                                key={tag.value}
-                                className="inline-block px-2 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-xs font-mono"
-                              >
-                                {tag.label}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-zinc-500 dark:text-zinc-400">
-                            No valid tags found
-                          </span>
-                        )
-                      })()
-                    ) : (
-                      <span className="text-zinc-500 dark:text-zinc-400">
-                        Using default tags: Tag1, Tag2, Tag3, Tag4, Tag5, Tag6
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleResetTags}
-                    className="px-3 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                  >
-                    Reset to Default
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleCancelTags}
-                    className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveTags}
-                    className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 border border-zinc-300 dark:border-zinc-600 rounded-lg transition-colors"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Modal>
-
-          {/* Output Display */}
-          <OutputDisplay
-            outputTab={outputTab}
-            onTabChange={setOutputTab}
-            jsonOutput={jsonOutput}
-            jsonLogicOutput={jsonLogicOutput}
-          />
+          {/* CTA */}
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-semibold text-black dark:text-white">
+              Ready to try it?
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              Explore the interactive demo and see how easy it is to build expressions
+            </p>
+            <Link
+              href="/demo"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors text-lg"
+            >
+              Launch Demo
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
       </main>
     </div>
